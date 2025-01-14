@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.dixcord.mapper.FriendMapper">
+    <!-- 사이드 바 친구 목록  - 방 번호 가져오기-->
+    <select id="getRoomNumber" parameterType="org.dixcord.domain.RoomMemberVO" resultType="int">
+        select roomNumber from dico_together where userCode = #{userCode}
+    </select>
+    
+    <!-- 사이드 바 친구 목록  - 채팅 중인 친구 리스트 출력-->
+    <select id="getFriendList" parameterType="org.dixcord.domain.RoomMemberVO" resultType="org.dixcord.domain.UserVO">
+    	SELECT t.usercode, u.userNickName, u.userState, u.userIcon from dico_together t 
+    	INNER JOIN dico_user u on u.usercode = t.usercode 
+    	WHERE t.roomnumber = #{roomNumber} and t.userCode != #{userCode}
+    </select>
+
+    <!-- 모든 친구 리스트 출력 및 검색 -->
+	<select id="getFriendListByNickName" parameterType="org.dixcord.domain.FriendVO" resultType="org.dixcord.domain.FriendVO">
+	    select f.userCode, f.friendCode, u.userNickName, u.userState, f.friendAuth, u.userIcon
+	    from dico_friend f
+	    inner join dico_user u on f.friendCode = u.userCode
+	    where f.userCode = #{userCode}
+	    <choose>
+	        <!-- searchFriend가 null이나 빈 문자열이 아니면 검색 조건 추가 -->
+	        <when test="searchFriend != null and searchFriend != ''">
+	            <choose>
+	                <!-- 숫자 검색 -->
+	                <when test="searchFriend.matches('^[0-9]+$')">
+	                    and u.userNickName LIKE '%' || #{searchFriend} || '%'
+	                </when>
+	                <!-- 문자열 검색 -->
+	                <otherwise>
+	                    and LOWER(u.userNickName) LIKE '%' || LOWER(#{searchFriend}) || '%'
+	                </otherwise>
+	            </choose>
+	        </when>
+	        <!-- searchFriend가 null 또는 빈 문자열일 때는 모두 반환 -->
+	        <otherwise>
+	            and 1 = 1
+	        </otherwise>
+	    </choose>
+	    order by
+	        case 
+	            WHEN f.userState = '온라인' THEN 1
+	            WHEN f.userState = '오프라인' THEN 2
+	            ELSE 3
+	        end
+	</select>
+	
+	<!-- 추천 친구 리스트 출력 및 검색 -->
+	<select id="getRecommendFriends" parameterType="org.dixcord.domain.FriendVO" resultType="org.dixcord.domain.FriendVO">
+	    SELECT u.userCode, u.userNickName, u.userState, u.userIcon
+	    FROM dico_user u
+	    WHERE u.userCode != #{userCode}
+	    AND u.userAuth = 'ROLE_USER' 
+	    AND u.userCode != 2070 
+	    AND u.userCode NOT IN (
+	        SELECT f.friendCode
+	        FROM dico_friend f
+	        WHERE f.userCode = #{userCode}
+	        UNION
+	        SELECT r.friendCode
+	        FROM dico_request_friend r
+	        WHERE r.userCode = #{userCode}
+	        UNION
+	        SELECT r.userCode
+	        FROM dico_request_friend r
+	        WHERE r.friendCode = #{userCode}
+	    )
+	    <choose>
+	        <!-- searchRecommendFriend가 null이나 빈 문자열이 아니면 검색 조건 추가 -->
+	        <when test="searchRecommendFriend != null and searchRecommendFriend != ''">
+	            <choose>
+	                <!-- 숫자 검색 -->
+	                <when test="searchRecommendFriend.matches('^[0-9]+$')">
+	                    AND u.userNickName LIKE '%' || #{searchRecommendFriend} || '%'
+	                </when>
+	                <!-- 문자열 검색 -->
+	                <otherwise>
+	                    AND LOWER(u.userNickName) LIKE '%' || LOWER(#{searchRecommendFriend}) || '%'
+	                </otherwise>
+	            </choose>
+	        </when>
+	        <!-- searchRecommendFriend가 null 또는 빈 문자열일 때는 모두 반환 -->
+	        <otherwise>
+	            AND 1 = 1
+	        </otherwise>
+	    </choose>
+	        order by u.registerDate DESC  <!-- 가입일 순으로 정렬 -->
+	</select>
+
+	
+	<!-- 요청 친구 리스트 출력 및 검색 -->
+	<select id="getRequestFriends" parameterType="org.dixcord.domain.FriendVO" resultType="org.dixcord.domain.FriendWaitVO">
+	    select 
+	        f.userCode, f.friendCode, u.userNickName, u.userState, u.userIcon
+	    from 
+	        dico_request_friend f
+	    inner join 
+	        dico_user u on f.friendCode = u.userCode
+	    where 
+	        f.userCode = #{friendCode}
+	        <choose>
+	            <!-- searchRequestFriend가 null이나 빈 문자열이 아니면 검색 조건 추가 -->
+	            <when test="searchRequestFriend != null and searchRequestFriend != ''">
+	                <choose>
+	                    <!-- 숫자 검색 -->
+	                    <when test="searchRequestFriend.matches('^[0-9]+$')">
+	                        and u.userNickName LIKE '%' || #{searchRequestFriend} || '%'
+	                    </when>
+	                    <!-- 문자열 검색 -->
+	                    <otherwise>
+	                        and LOWER(u.userNickName) LIKE '%' || LOWER(#{searchRequestFriend}) || '%'
+	                    </otherwise>
+	                </choose>
+	            </when>
+	        </choose>
+	</select>
+	
+	<!-- 대기 중 친구 리스트 출력 및 검색 -->
+	<select id="getWaitFriends" parameterType="org.dixcord.domain.FriendVO" resultType="org.dixcord.domain.FriendWaitVO">
+	    select f.userCode, f.friendCode, u.userNickName, u.userState, u.userIcon
+	    from dico_request_friend f
+	    inner join dico_user u on f.userCode = u.userCode
+	    where f.friendCode = #{friendCode}
+	        <choose>
+	            <!-- searchWaitFriend가 null이나 빈 문자열이 아니면 검색 조건 추가 -->
+	            <when test="searchWaitFriend != null and searchWaitFriend != ''">
+	                <choose>
+	                    <!-- 숫자 검색 -->
+	                    <when test="searchWaitFriend.matches('^[0-9]+$')">
+	                        and u.userNickName LIKE '%' || #{searchWaitFriend} || '%'
+	                    </when>
+	                    <!-- 문자열 검색 -->
+	                    <otherwise>
+	                        and LOWER(u.userNickName) LIKE '%' || LOWER(#{searchWaitFriend}) || '%'
+	                    </otherwise>
+	                </choose>
+	            </when>
+	        </choose>
+	</select>
+	
+	<!-- 차단 친구 리스트 출력 및 검색 -->
+	<select id="getBlockFriends" resultType="org.dixcord.domain.FriendVO">
+	    select f.userCode, f.friendCode, u.userNickName, f.userState, f.friendAuth, u.userIcon
+	    from dico_friend f
+	    inner join dico_user u on f.friendCode = u.userCode
+	    where f.userCode = #{friendCode}
+	    and f.friendAuth = '차단친구'
+	    <choose>
+	        <!-- searchBlockFriend가 null이나 빈 문자열이 아니면 검색 조건 추가 -->
+	        <when test="searchBlockFriend != null and searchBlockFriend != ''">
+	            <choose>
+	                <!-- 숫자 검색 -->
+	                <when test="searchBlockFriend.matches('^[0-9]+$')">
+	                    and u.userNickName LIKE '%' || #{searchBlockFriend} || '%'
+	                </when>
+	                <!-- 문자열 검색 -->
+	                <otherwise>
+	                    and LOWER(u.userNickName) LIKE '%' || LOWER(#{searchBlockFriend}) || '%'
+	                </otherwise>
+	            </choose>
+	        </when>
+	        <!-- searchBlockFriend가 null 또는 빈 문자열일 때는 모두 반환 -->
+	        <otherwise>
+	            and 1 = 1
+	        </otherwise>
+	    </choose>
+	</select>
+	
+    <!-- 친구 삭제 -->
+    <delete id="deleteFriend" parameterType="org.dixcord.domain.FriendVO">
+	    DELETE FROM dico_friend 
+	    WHERE userCode = #{userCode} AND friendCode = #{friendCode}
+	</delete>	
+	
+	<!-- 친구 대화방 삭제 -->
+    <delete id="deleteTogether" parameterType="int">
+	    DELETE FROM dico_together 
+	    WHERE roomNumber = #{roomNumber}
+	</delete>	
+    
+    <!-- 친구 추가 -->
+    <insert id="addFriend" parameterType="org.dixcord.domain.FriendWaitVO">
+	    INSERT INTO dico_request_friend (userCode, friendCode)
+	    VALUES (#{userCode}, #{friendCode})
+	</insert>
+	
+    <!-- 친구 요청 취소 -->
+    <delete id="cancelFriend" parameterType="org.dixcord.domain.FriendWaitVO">
+	    DELETE FROM dico_request_friend 
+	    WHERE userCode = #{userCode} AND friendCode = #{friendCode}
+	</delete>	
+	
+    <!-- 대기 중인 친구 요청 수락 -->
+	<!-- 친구 요청 삭제 -->
+    <delete id="deleteFriendRequest" parameterType="org.dixcord.domain.FriendWaitVO">
+        DELETE FROM dico_request_friend
+        WHERE userCode = #{friendCode} AND friendCode = #{userCode}
+    </delete>
+
+    <!-- 친구 관계 추가 -->
+    <insert id="insertFriend" parameterType="org.dixcord.domain.FriendWaitVO">
+        INSERT INTO dico_friend (userCode, friendCode, friendAuth, userState)
+        VALUES (#{userCode}, #{friendCode}, '일반친구', '온라인')
+    </insert>
+	
+    <!-- 대기 중인 친구 요청 거절 -->
+    <delete id="rejectFriend" parameterType="org.dixcord.domain.FriendWaitVO">
+	    DELETE FROM dico_request_friend 
+	    WHERE userCode = #{friendCode} AND friendCode = #{userCode}
+	</delete>
+	
+	<!-- 친구 차단 -->
+	<update id="lockFriend" parameterType="org.dixcord.domain.FriendVO">
+	 	UPDATE dico_friend
+	 	SET friendAuth = '차단친구' 
+	 	WHERE userCode = #{userCode} AND friendCode = #{friendCode}
+	</update>
+	
+	<!-- 친구 차단 해제 -->
+	<update id="unlockFriend" parameterType="org.dixcord.domain.FriendVO">
+	 	UPDATE dico_friend
+	 	SET friendAuth = '일반친구' 
+	 	WHERE userCode = #{userCode} AND friendCode = #{friendCode}
+	</update>
+	
+	<!-- 상세 친구 추가 -->
+	<!-- 1. 친구 목록에 있는 지 확인 -->
+	<select id="checkFriendListByFriendCode" parameterType="org.dixcord.domain.FriendVO" resultType="int">
+		SELECT COUNT(*) 
+        FROM dico_friend 
+        WHERE userCode = #{userCode} AND friendCode = #{friendCode}
+	</select>
+	
+	<!-- 2. 신청 목록에 있는 지 확인 -->
+	<select id="checkRequestFriendListByFriendCode" parameterType="org.dixcord.domain.FriendVO" resultType="int">
+		SELECT COUNT(*) 
+        FROM dico_request_friend 
+        WHERE userCode = #{userCode} AND friendCode = #{friendCode}
+	</select>
+	
+	<!-- 3. 친구의 신청 목록에 있는 지 확인 -->
+	<select id="checkRequestFriendListByFriendCode2" parameterType="org.dixcord.domain.FriendVO" resultType="int">
+		SELECT COUNT(*) 
+        FROM dico_request_friend 
+        WHERE friendCode = #{userCode} AND userCode = #{friendCode}
+	</select>
+	
+	<!-- 4. 친구 추가 -->
+	<insert id="addEmailFriend" parameterType="org.dixcord.domain.FriendVO">
+	    INSERT INTO dico_request_friend (userCode, friendCode)
+	    VALUES (#{userCode}, #{friendCode})
+	</insert>
+
+	<!-- 모든 친구 - 채팅방 이동 - 채팅방 생성 -->
+	<!-- 하드 코딩으로  userCode, roomTitle, roomCategory -->
+	<insert id="createRoom" parameterType="int">
+		INSERT INTO dico_room (roomNumber, userCode, roomTitle, roomCategory)
+		VALUES (#{roomNumber}, '999', '친구방', '친구') 
+	</insert>
+</mapper>
+

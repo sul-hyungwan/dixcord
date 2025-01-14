@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.dixcord.mapper.BotMapper">
+	<!-- 이거 작동 안함. 윤언니가 만들면 따와야 할듯? 아니면 협의해서 만들던가. -->
+
+	<!-- <insert id="enter" parameterType="int" > INSERT INTO dico_together 
+		(usercode, roomnumber) VALUES ('bot100', #{roomnumber}) </insert> -->
+
+	<insert id="banword"
+		parameterType="org.dixcord.domain.BotWorkVO">
+		insert into dico_banword (roomnumber, banword) values (#{roomnumber} ,
+		#{banword} )
+	</insert>
+
+	<insert id="bigbrother"
+		parameterType="org.dixcord.domain.BotWorkVO">
+		insert into dico_warn(roomNumber, userCode) values (#{roomnumber} ,
+		#{userCode} )
+	</insert>
+
+
+	<insert id="help" parameterType="org.dixcord.domain.BotWarnVO">
+		insert into dico_chathistory(textchatno, usercode, message,textdate,
+		usernickname, usericon, chatGuid,chatimg) values
+		(#{roomnumber}, 2070, 'Nino Bot 사용 설명서
+		1. 금지어 설정.
+		add Banword 입력창에 금지 단어 입력후 엔터를 누르면 금지어가 설정이 됩니다.
+		설정 된 금지어가 포함된 채팅은 NinoBot이 가립니다.
+		2. 금지어 해제.
+		add Banword 입력창 밑에 있는 금지어 버튼을 누르면 해당 금지어가 해제 됩니다.
+		3. 금지어 기능 해제
+		NinoBot Config 창에서 Chatting Fitter 의 버튼을 눌러 기능을 끄거나 킬 수 있습니다.
+		4. 자동 강퇴 기능
+		금지어 설정 후 금지어가 포함된 채팅을 3회 이상 입력 시 강퇴합니다.
+		NinoBot Config 창에서 Auto Kick 의 버튼을 눌러 기능을 끄거나 킬 수 있습니다.
+		5. 음악 재생 설정.
+		NinoBot Config 창에서 Music Player 의 버튼을 눌러 기능을 끄거나 킬 수 있습니다.', sysdate,
+		'NinoBot', '/images/shg/ninopla.jpg',SYS_GUID(),null)
+	</insert>
+
+
+	<delete id="kick" parameterType="org.dixcord.domain.BotWorkVO">
+		delete from dico_together where userCode = #{userCode} and roomnumber =
+		#{roomnumber}
+	</delete>
+
+	<select id="deathcount"
+		parameterType="org.dixcord.domain.BotWarnVO" resultType="int">
+		select count(*) from dico_warn where roomnumber = #{roomnumber} and userCode
+		= #{userCode}
+	</select>
+
+	<select id="banWordList" parameterType="int"
+		resultType="java.lang.String">
+		select banword from dico_banword where roomnumber = #{roomnumber}
+	</select>
+
+	<!-- <insert id="warning" parameterType="int"> insert into dico_chatHistory 
+		(textChatNO,userCode, textContent, textDate, usernickname, usericon, chatguid) 
+		values (#{roomnumber},'bot100','금지어는 사용 하실 수 없습니다.', sysdate, '니노봇','/images/usericon2.jpg', 
+		'ninobotmessagetoillegalchatusers' ) </insert> -->
+
+	<delete id="deleteBanword"
+		parameterType="org.dixcord.domain.BotWorkVO">
+		delete from dico_banword where roomnumber = #{roomnumber} and banword =
+		#{banword}
+	</delete>
+
+	<update id="updateStatus"
+		parameterType="org.dixcord.domain.BotStatusD">
+		UPDATE Bot_status
+		SET
+		BWstatus = CASE WHEN #{statusType} = 'BWstatus' THEN #{value} ELSE BWstatus
+		END,
+		WKstatus = CASE WHEN #{statusType} = 'WKstatus' THEN #{value} ELSE WKstatus
+		END,
+		MPstatus = CASE WHEN #{statusType} = 'MPstatus' THEN #{value} ELSE MPstatus
+		END
+		WHERE roomnumber = #{roomnumber}
+	</update>
+
+	<insert id="initStatus" parameterType="int">
+		insert into Bot_status (roomnumber,BWstatus,WKstatus, MPstatus )
+		values (#{roomnumber},1,1,1)
+	</insert>
+	<select id="checkStatus" parameterType="int" resultType="int">
+		select count(*) from Bot_status where roomnumber =#{roomnumber}
+	</select>
+	<select id="roomStatus" parameterType="int"
+		resultType="org.dixcord.domain.BotStatusVO">
+		select * from Bot_status where roomnumber =#{roomnumber}
+	</select>
+
+	<delete id="indulgence"
+		parameterType="org.dixcord.domain.BotWorkVO">
+		delete from dico_warn where roomnumber = #{roomnumber} and usercode =
+		#{userCode}
+	</delete>
+	<insert id="botFriendAdd" parameterType="int">
+		insert into dico_friend (userCode, friendCode, friendAuth, userState) values
+		( 2070 , #{userCode}, '일반친구', '온라인')
+	</insert>
+
+	<insert id="botFriendAdd2" parameterType="int">
+		insert into dico_friend (userCode, friendCode, friendAuth, userState) values
+		( #{userCode} , 2070, '일반친구', '온라인')
+	</insert>
+
+</mapper>

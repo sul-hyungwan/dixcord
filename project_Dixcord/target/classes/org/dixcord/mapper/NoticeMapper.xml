@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+ <mapper namespace="org.dixcord.mapper.NoticeMapper">
+    <select id="noticeList" resultType="org.dixcord.domain.NoticeVO">
+       select * from dico_notice order by idx desc
+    </select>
+    
+    <select id="read" parameterType="int" resultType="org.dixcord.domain.NoticeVO">
+    SELECT 
+        n.idx,
+        n.usercode,
+        n.writer,
+        n.title,
+        n.content,
+        n.regdate,
+        n.updateDate,
+        u.userIcon
+    FROM 
+        dico_notice n
+    JOIN 
+        dico_user u
+    ON 
+        n.usercode = u.usercode
+    WHERE 
+        n.idx = #{idx}
+   </select>
+   
+   <update id="modify" parameterType="org.dixcord.domain.NoticeVO">
+      update dico_notice set 
+      title = #{title}, content = #{content}, writer = #{writer}, UPDATEDATE = sysdate
+      where idx = #{idx}
+   </update>
+   
+   <delete id="delete" parameterType="int">
+      delete from dico_notice where idx = #{idx}
+   </delete>
+   
+   <insert id="insert" parameterType="org.dixcord.domain.NoticeVO">
+          <selectKey keyProperty="idx" resultType="int" order="BEFORE">
+              SELECT dico_notice_seq.NEXTVAL FROM DUAL
+          </selectKey>
+       INSERT INTO dico_notice (usercode, idx, writer, title, content, regdate, updatedate)
+       VALUES (#{usercode}, #{idx}, #{writer}, #{title}, #{content}, sysdate, sysdate)
+   </insert>
+   
+   <select id="readTitle" parameterType="int" resultType="string">
+      select title from dico_notice WHERE idx = #{idx}
+   </select>
+
+ </mapper>

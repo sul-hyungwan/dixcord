@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="org.dixcord.mapper.RoomMapper">
+
+	<!--방 생성하기-->
+	<insert id="createRoom" parameterType="org.dixcord.domain.RoomVO">
+		<selectKey keyProperty="roomNumber" resultType="int" order="BEFORE">
+			select room_seq.NEXTVAL from dual
+		</selectKey>
+		insert into dico_room(roomNumber,userCode,roomTitle,roomCategory,roomIcon,roomInviteCode) 
+		values(#{roomNumber},#{userCode},#{roomTitle},#{roomCategory},#{roomIcon},#{roomInviteCode})
+	</insert>
+	
+	<!-- 모든 방 리스트 가져오기 -->
+	<select id="getRoomListAll" resultType="org.dixcord.domain.RoomVO">
+      select * from dico_room where roomnumber != 999 order by roomnumber desc
+    </select>
+
+	<!--방 정보 가져오기-->
+	<select id="getRoomInfo" resultType="org.dixcord.domain.RoomVO">
+		select * from dico_room where roomNumber=#{roomNumber}
+	</select>
+	
+	<!--방 리스트 가져오기-->
+	<select id="getChatList" parameterType="int" resultType="org.dixcord.domain.RoomVO">
+		select * from dico_room where roomNumber=#{roomNumber}
+	</select>
+	
+	<!--방 생성 시 필요한 유저 이름 가져오기-->
+	<select id="getUserName" resultType="String">
+		select userName from dico_user where userCode=#{userCode}
+	</select>
+	
+	<!--유저코드로 방 들어가기-->
+	<select id="isInvited" resultType="int">
+		select roomNumber from dico_room where roomInviteCode = #{roomInviteCode}
+	</select>
+	
+	<!--방 생성 동시에 채팅방 참여유저에 방장 추가 및 방 입장 시 유저 추가-->
+	<insert id="addChatMember" parameterType="org.dixcord.domain.RoomMemberVO">
+		insert into dico_together values(#{roomNumber}, #{userCode}, #{auth}, CURRENT_TIMESTAMP)
+	</insert>
+	
+	<!--생성 후 참여유저에 방장 불러오기 및 방에 참여한 인원 가져오기 -->
+	<select id="getChatMember" resultType="org.dixcord.domain.RoomMemberVO">
+		select * from  dico_together where roomNumber = #{roomNumber}
+		order by roomEnterTime asc
+	</select>
+	
+	<!--유저 정보 다 가져오기  -->
+	<select id="getMemberInfo" resultType="org.dixcord.domain.UserVO">
+		select * from dico_user where userCode= #{userCode}
+	</select>
+	
+	<!--방 삭제 -->
+	<delete id="deleteRoom" parameterType="int" >
+		delete dico_room where roomNumber = #{roomNumber}
+	</delete>
+	
+	<!--내가 참여한 방 목록 삭제(방장)  -->
+	<delete id="deleteTogether" parameterType="int">
+		delete dico_together where roomNumber = #{roomNumber}
+	</delete>
+	
+	<!--방 나간 후 참여 목록에서 유저 삭제(방장일 때 방 나가기)-->
+	<delete id="exitRoom" parameterType="int">
+		delete dico_together where userCode = #{userCode}
+	</delete>
+	
+	<!--내가 참가한 방의 roomNumber 가져오기-->
+	<select id="joinedRoomNum" resultType="int">
+		select roomNumber from dico_together where userCode = #{userCode}
+	</select>
+	
+	<!--채팅방 유저 권한 가져오기  -->
+	<select id="getRoomAuth" resultType="String" parameterType="org.dixcord.domain.RoomMemberVO">
+		select auth from dico_together where userCode = #{userCode} and roomNumber = #{roomNumber}
+	</select>
+	
+	<!--방장 다음으로 들어 온 유저에게 방장 권한 부여  -->
+	<update id="updateHost" parameterType="int">
+		update dico_together set auth = '방장' where userCode = #{userCode}
+	</update>
+	
+	<!--dico_room 테이블 업데이트(userCode:개설자 코드)-->
+	<update id="updateCreator" parameterType="org.dixcord.domain.RoomMemberVO">
+		update dico_room set userCode = #{userCode} where roomNumber = #{roomNumber}
+	</update>
+	
+	<!-- 방 나간 후 참여 목록에서 유저 삭제(일반 유저일 때  방 나가기)- -->
+	<delete id="exitRoom2" parameterType="org.dixcord.domain.RoomMemberVO">
+		delete dico_together where userCode = #{userCode} and roomNumber = #{roomNumber}
+	</delete>
+	
+	
+	<!--이미 방에 참가하고 있는지 조회-->
+	<select id="alreadyJoin" resultType="int">
+		select count(*) from dico_together where userCode = #{userCode} and roomNumber = #{roomNumber}
+	</select>
+	
+	<!--방 설정 업데이트-->
+	<update id="settingUpdate" parameterType="org.dixcord.domain.RoomVO">
+		update dico_room set 
+		roomTitle = #{roomTitle}, 
+		roomCategory = #{roomCategory}, 
+		welcomeMessage = #{welcomeMessage}, 
+		roomIcon = #{roomIcon}, 
+		roomBgImg = #{roomBgImg}
+		where roomNumber = #{roomNumber}
+	</update>
+	
+	<!--유저 닉네임들 불러오기-->
+	<select id="getUserNickName" resultType="org.dixcord.domain.UserVO">
+		select userNickName, userCode from dico_user where userCode = #{userCode}
+	</select>
+	
+	<!--  채팅방에 유저가 이미 있는지 체크  -->
+	<select id="togetherCheck" parameterType="org.dixcord.domain.RoomMemberVO" resultType="int"> select count(*) from dico_together where userCode = #{userCode} and roomNumber = #{roomNumber} </select>
+
+	<!--초대코드 가져오기-->
+	<select id="getInviteCode" resultType="int">
+		select roomInviteCode from dico_room where roomNumber = #{roomNumber}
+	</select>
+	
+</mapper>

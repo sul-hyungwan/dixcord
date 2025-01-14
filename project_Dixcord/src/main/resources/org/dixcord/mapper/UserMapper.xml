@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.dixcord.mapper.UserMapper">
+
+	<!-- 유저회원가입 -->
+	<insert id="registerUser"
+		parameterType="org.dixcord.domain.UserVO">
+		insert into dico_user (userCode, userEmail, userpassword, username,
+		usernickname, usericon, userphone, userbirthday, registerdate,
+		userauth, userstate, userstateoption, usersearchoption,
+		usermessageoption, sociallogin, backgroundimg) values (
+		dico_user_usercord.nextval, #{userEmail}, #{userPassword},
+		#{userName},
+		<choose>
+			<when test="userNickName == '(미입력)'">
+				#{userName} || seq_dico_userNickName.nextval,
+			</when>
+			<otherwise>
+				#{userNickName},
+			</otherwise>
+		</choose>
+		#{userIcon}, #{userPhone}, #{userBirthday}, sysdate, 'ROLE_USER',
+		'오프라인', 0, 0, 0, '기본값', '(미입력)')
+	</insert>
+
+	<!-- 유저 정보 조회 ( 유저코드 ) -->
+	<select id="getUserDataByUserCode" parameterType="int"
+		resultType="org.dixcord.domain.UserVO">
+		select * from dico_user where userCode = #{userCode}
+	</select>
+
+	<!-- 관심사 등록 -->
+	<insert id="registerInterenst"
+		parameterType="org.dixcord.domain.UserInterestVO">
+		insert into dico_userinterest values (#{userCode},
+		#{interest})
+	</insert>
+
+	<!-- 이메일 중복체크 -->
+	<select id="emailCheck" parameterType="String" resultType="int">
+		select count(*) from dico_user where userEmail = #{userEmail}
+	</select>
+
+	<!-- 별명 중복체크 -->
+	<select id="nickNameCheck" parameterType="String"
+		resultType="int">
+		select count(*) from dico_user where userNickName =
+		#{userNickName}
+	</select>
+	
+	<!-- 유저 Email로 정보 조회 -->
+	<select id="read" parameterType="String"
+		resultType="org.dixcord.domain.UserVO">
+		select * from dico_user where userEmail = #{userEmail}
+	</select>
+	
+	<!-- 카카오 로그인을 위해 카카오Id 가져오기 -->
+	<select id="readByKakaoId" parameterType="String"
+		resultType="org.dixcord.domain.UserVO">
+		select * from dico_user where kakaoId = #{kakaoId}
+	</select>
+	
+	<!-- 모든 유저 정보 가져오기 -->
+	<select id="getUserList" resultType="org.dixcord.domain.UserVO">
+		select * from dico_user where userAuth != 'ROLE_DELETE' order by registerDate desc
+	</select>
+
+	<!-- 유저 상태 온라인으로 변경 -->
+	<update id="updateLoginStateOnline" parameterType="int">
+		update
+		dico_user set userstate = '온라인' where usercode = #{usercode}
+	</update>
+
+	<!-- 유저 상태 오프라인으로 변경 -->
+	<update id="updateLoginStateOffline" parameterType="int">
+		update
+		dico_user set userstate = '오프라인' where usercode = #{usercode}
+	</update>
+
+	<!-- 카카오 로그인 연동 -->
+	<update id="updateKakaoId"
+		parameterType="org.dixcord.domain.UserVO">
+		update dico_user set kakaoId = #{kakaoId} where userCode
+		= #{userCode}
+	</update>
+
+	<!-- 유저 정보 변경 -->
+	<update id="userUpdateInfo"
+		parameterType="org.dixcord.domain.UserVO">
+		update dico_user set
+		userNickName = #{userNickName},
+		userEmail = #{userEmail},
+		userIcon = #{userIcon},
+		backGroundImg = #{backGroundImg},
+		userPhone = #{userPhone}
+		where userCode = #{userCode}
+	</update>
+
+	<!-- 비밀번호 변경 -->
+	<update id="passwordUpdate"
+		parameterType="org.dixcord.domain.UserVO">
+		update dico_user set userPassword = #{userPassword}
+		where userCode = #{userCode}
+	</update>
+	
+	<!-- 비밀번호 변경 -->
+	<update id="passwordUpdateByEmail"
+		parameterType="org.dixcord.domain.UserVO">
+		update dico_user set userPassword = #{userPassword}
+		where userEmail = #{userEmail}
+	</update>
+	
+	<!-- 유저 권한 업데이트 -->
+	<update id="setUpdateUserAuth" parameterType="org.dixcord.domain.UserVO">
+		update dico_user set userAuth = #{userAuth} where userCode = #{userCode}
+	</update>
+	
+	<!-- 유저 삭제 -->
+	<update id="deleteUserData" parameterType="int">
+		update dico_user set 
+			userEmail = 'deleteUser' || dico_delete_user.nextval, 
+			userPassword = 'tkdydgksgksmsqlalfqjsghdlqslek4477!!@@',
+			userName = '삭제된 유저',
+			userNickName = '삭제된 유저' || SEQ_DICO_USERNICKNAME.nextval, 
+			userIcon = '(미입력)', 
+			userPhone = '010-0000-0000', 
+			userAuth = 'ROLE_DELETE',
+			userState = '삭제됨'
+		where userCode = #{userCode}
+	</update>
+</mapper>

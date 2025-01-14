@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="org.dixcord.mapper.ServiceSearchMapper">
+	<select id="search" resultType="org.dixcord.domain.NoticeVO" parameterType="string">
+	    SELECT * 
+			FROM dico_notice
+			WHERE writer LIKE '%' || #{keyword} || '%'
+			   OR title LIKE '%' || #{keyword} || '%'
+			   OR content LIKE '%' || #{keyword} || '%'
+			ORDER BY regdate DESC
+	</select>
+</mapper>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<mapper namespace="org.dixcord.mapper.InquiryMapper">
+	<insert id="inquiryInsert" parameterType="org.dixcord.domain.InquiryVo">
+		INSERT INTO dico_inquiry (inquiryNo, userCode, userName, category, content, inquiryState, inquiryDate)
+	    VALUES (dico_inquiry_seq.NEXTVAL, #{userCode}, #{userName}, #{category}, #{content}, '처리 전', sysdate)
+	</insert>
+	
+	<select id="userInquirieList" parameterType="int" resultType="org.dixcord.domain.InquiryVo">
+        SELECT * FROM dico_inquiry
+   		WHERE userCode = #{userCode}
+        ORDER BY inquiryDate DESC
+    </select>
+</mapper>

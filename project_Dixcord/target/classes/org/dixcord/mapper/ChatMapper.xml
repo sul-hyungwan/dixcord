@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="org.dixcord.mapper.ChatMapper"> 
+<select id="getChatHistory" resultType="org.dixcord.domain.ChatHistoryVO" parameterType="int">
+		SELECT
+			u.usercode,
+			u.userNickName,
+			c.userIcon,
+			c.message,
+			c.textDate,
+			c.textChatNo,
+            c.chatguid,
+            c.chatImg,
+            c.gifSrc
+		FROM dico_user u
+		JOIN dico_chathistory c
+		ON u.usercode = c.usercode
+		AND c.textChatNo = #{textChatNo}
+		ORDER BY c.textDate ASC
+	</select>
+	
+	<select id="getTextChatNo" parameterType="int" resultType="int">
+		select textChatNo from dico_chatchannel where roomNumber = #{roomNumber}
+	</select>
+	
+	<insert id="createTextChat" parameterType="int">
+		insert into dico_chatchannel values (#{roomNumber}, DICO_TEXTCHATNO_SEQ.nextval)
+	</insert>
+
+	<insert id="saveChatHistory" parameterType="org.dixcord.domain.ChatHistoryVO">
+    INSERT INTO
+        dico_chatHistory
+    <choose>
+        <when test="chatImg != null">
+            (textChatNo, usercode, message, textdate, usernickname, userIcon, chatGuid, chatImg)
+            VALUES (#{textChatNo}, #{userCode}, #{message}, SYSDATE, #{userNickName}, #{userIcon}, SYS_GUID(), #{chatImg})
+        </when>
+        <when test="gifSrc != null">
+            (textChatNo, usercode, message, textdate, usernickname, userIcon, chatGuid, gifSrc)
+            VALUES (#{textChatNo}, #{userCode}, #{message}, SYSDATE, #{userNickName}, #{userIcon}, SYS_GUID(), #{gifSrc})
+        </when>
+        <otherwise>
+            (textChatNo, usercode, message, textdate, usernickname, userIcon, chatGuid)
+            VALUES (#{textChatNo}, #{userCode}, #{message}, SYSDATE, #{userNickName}, #{userIcon}, SYS_GUID())
+        </otherwise>
+    </choose>
+</insert>
+	
+	<select id="getChatHistoryNow" parameterType="org.dixcord.domain.ChatHistoryVO" resultType="org.dixcord.domain.ChatHistoryVO">
+		SELECT * FROM 
+			dico_chatHistory 
+		WHERE textdate = (SELECT MAX(textdate) FROM dico_chatHistory where textChatNo = #{textChatNo})
+	</select>
+	
+	<select id="getChatHistoryUpdate" parameterType="String" resultType="org.dixcord.domain.ChatHistoryVO">
+		SELECT * FROM 
+			dico_chatHistory 
+		WHERE chatguid = #{chatGuid}
+	</select>
+	
+	<delete id="deleteChatHistory" parameterType="org.dixcord.domain.ChatHistoryVO">
+		DELETE FROM dico_chathistory 
+			WHERE chatGuid = #{chatGuid} 
+		AND userCode = #{userCode}
+	</delete>
+	
+	<update id="saveEditedMessage" parameterType="org.dixcord.domain.ChatHistoryVO">
+		UPDATE 
+			dico_chathistory SET message = #{message} 
+		WHERE chatGuid = #{chatGuid}
+	</update>
+</mapper>
